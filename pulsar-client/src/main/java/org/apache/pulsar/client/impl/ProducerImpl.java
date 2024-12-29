@@ -962,6 +962,7 @@ public class ProducerImpl<T> extends ProducerBase<T> implements TimerTask, Conne
                     msg.getUncompressedSize());
         }
         try {
+            //先把队列里原来的数据发送出去，再积攒新的batch？
             batchMessageAndSend(false);
             boolean isBatchFull = batchMessageContainer.add(msg, callback);
             triggerSendIfFullOrScheduleFlush(isBatchFull);
@@ -2321,6 +2322,7 @@ public class ProducerImpl<T> extends ProducerBase<T> implements TimerTask, Conne
                 // If we do have a connection, the message is sent immediately, otherwise we'll try again once a new
                 // connection is established
                 op.cmd.retain();
+                //把消息放入通道，发送出去
                 cnx.ctx().channel().eventLoop().execute(WriteInEventLoopCallback.create(this, cnx, op));
                 stats.updateNumMsgsSent(op.numMessagesInBatch, op.batchSizeByte);
             } else {

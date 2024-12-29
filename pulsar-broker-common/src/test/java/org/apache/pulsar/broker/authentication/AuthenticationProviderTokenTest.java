@@ -107,6 +107,7 @@ public class AuthenticationProviderTokenTest {
         KeyPair keyPair = Keys.keyPairFor(SignatureAlgorithm.RS256);
 
         String privateKey = AuthTokenUtils.encodeKeyBase64(keyPair.getPrivate());
+        //这里的公钥经过base64编码
         String publicKey = AuthTokenUtils.encodeKeyBase64(keyPair.getPublic());
 
         String token = AuthTokenUtils.createToken(AuthTokenUtils.decodePrivateKey(Decoders.BASE64.decode(privateKey), SignatureAlgorithm.RS256),
