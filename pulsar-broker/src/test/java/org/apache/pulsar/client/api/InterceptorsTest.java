@@ -86,6 +86,39 @@ public class InterceptorsTest extends ProducerConsumerBase {
     }
 
     @Test
+    public void testProducerInterceptorAccessMessageValue() throws PulsarClientException {
+        List<String> messageValueOnSendAcknowledgement = new ArrayList<>();
+        ProducerInterceptor<String> interceptor = new ProducerInterceptor<>() {
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public Message<String> beforeSend(Producer<String> producer, Message<String> message) {
+                return message;
+            }
+
+            @Override
+            public void onSendAcknowledgement(Producer<String> producer, Message<String> message, MessageId msgId,
+                                              Throwable exception) {
+                messageValueOnSendAcknowledgement.add(message.getValue());
+            }
+        };
+        @Cleanup
+        Producer<String> producer = pulsarClient.newProducer(Schema.STRING)
+                .topic("persistent://my-property/my-ns/my-topic")
+                .intercept(interceptor)
+                .create();
+
+        try {
+            producer.newMessage().value("Hello, Pulsar!").send();
+        } catch (Exception ignore) {
+        }
+        Assert.assertEquals(messageValueOnSendAcknowledgement.size(), 1);
+        Assert.assertEquals(messageValueOnSendAcknowledgement.get(0), "Hello, Pulsar!");
+    }
+
+    @Test
     public void testProducerInterceptor() throws Exception {
         Map<MessageId, List<String>> ackCallback = new HashMap<>();
 

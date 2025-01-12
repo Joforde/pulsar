@@ -433,8 +433,8 @@ public class ProducerImpl<T> extends ProducerBase<T> implements TimerTask, Conne
             if (payload == null) {
                 log.error("[{}] [{}] Payload is null when calling onSendComplete, which is not expected.",
                         topic, producerName);
-            } else {
-                ReferenceCountUtil.safeRelease(payload);
+            }else{
+                payload.resetReaderIndex();
             }
             if (e != null) {
                 latencyHistogram.recordFailure(latencyNanos);
