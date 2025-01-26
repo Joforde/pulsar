@@ -1888,7 +1888,9 @@ public class BrokerService implements Closeable {
     }
 
     private CompletableFuture<Void> checkTopicAlreadyMigrated(TopicName topicName) {
-        if (ExtensibleLoadManagerImpl.isInternalTopic(topicName.toString())) {
+        if (ExtensibleLoadManagerImpl.isInternalTopic(topicName.toString())
+                || SystemTopicNames.isEventSystemTopic(topicName)
+                || NamespaceService.isHeartbeatNamespace(topicName.getNamespaceObject())) {
             return CompletableFuture.completedFuture(null);
         }
         CompletableFuture<Void> result = new CompletableFuture<>();
@@ -2000,6 +2002,8 @@ public class BrokerService implements Closeable {
 
             managedLedgerConfig
                     .setMaxUnackedRangesToPersist(serviceConfig.getManagedLedgerMaxUnackedRangesToPersist());
+            managedLedgerConfig
+                    .setPersistIndividualAckAsLongArray(serviceConfig.isManagedLedgerPersistIndividualAckAsLongArray());
             managedLedgerConfig.setPersistentUnackedRangesWithMultipleEntriesEnabled(
                     serviceConfig.isPersistentUnackedRangesWithMultipleEntriesEnabled());
             managedLedgerConfig.setMaxUnackedRangesToPersistInMetadataStore(
@@ -3532,6 +3536,13 @@ public class BrokerService implements Closeable {
         //Other system topics can be created automatically
         if (pulsar.getConfiguration().isSystemTopicEnabled() && isSystemTopic(topicName)) {
             return CompletableFuture.completedFuture(true);
+        }
+
+        //If 'allowAutoTopicCreation' is true, and the name of the topic contains 'cluster',
+        //the topic cannot be automatically created.
+        if (!pulsar.getConfiguration().isAllowAutoTopicCreationWithLegacyNamingScheme()
+                && StringUtils.isNotBlank(topicName.getCluster())) {
+            return CompletableFuture.completedFuture(false);
         }
 
         final boolean allowed;

@@ -687,9 +687,8 @@ public class PersistentDispatcherMultipleConsumers extends AbstractPersistentDis
 
     @Override
     protected void cancelPendingRead() {
-        if ((havePendingRead || havePendingReplayRead) && cursor.cancelPendingReadRequest()) {
+        if (havePendingRead && cursor.cancelPendingReadRequest()) {
             havePendingRead = false;
-            havePendingReplayRead = false;
         }
     }
 
@@ -1423,6 +1422,9 @@ public class PersistentDispatcherMultipleConsumers extends AbstractPersistentDis
 
     protected boolean addMessageToReplay(long ledgerId, long entryId, long stickyKeyHash) {
         if (checkIfMessageIsUnacked(ledgerId, entryId)) {
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Adding message to replay for {}:{} hash: {}", name, ledgerId, entryId, stickyKeyHash);
+            }
             redeliveryMessages.add(ledgerId, entryId, stickyKeyHash);
             return true;
         } else {
