@@ -18,6 +18,7 @@
  */
 package org.apache.pulsar.metadata;
 
+import static org.junit.Assert.assertFalse;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotNull;
@@ -66,4 +67,39 @@ public class MetadataStoreExtendedTest extends BaseMetadataStoreTest {
         assertNotEquals(seq1, seq2);
         assertTrue(n1 < n2);
     }
+
+    @Test
+    public void zookeeperEphemeralKeys() throws Exception {
+        final String key1 = newKey();
+        final String key2 = newKey();
+        @Cleanup
+        MetadataStoreExtended store = MetadataStoreExtended.create(zks.getConnectionString(), MetadataStoreConfig.builder().build());
+        store.put(key1, "value-1".getBytes(), Optional.of(-1L), EnumSet.of(CreateOption.Ephemeral)).join();
+        store.put(key2, "value-1".getBytes(), Optional.empty(), EnumSet.of(CreateOption.Ephemeral)).join();
+        store.close();
+
+        @Cleanup
+        MetadataStoreExtended store2 = MetadataStoreExtended.create(zks.getConnectionString(), MetadataStoreConfig.builder().build());
+        assertFalse(store2.exists(key1).join());
+        assertFalse(store2.exists(key2).join());
+        store2.close();
+    }
+
+    @Test(dataProvider = "impl", enabled = false)
+    public void ephemeralKeys(String provider, Supplier<String> urlSupplier) throws Exception {
+        final String key1 = newKey();
+        final String key2 = newKey();
+
+        MetadataStoreExtended store = MetadataStoreExtended.create(urlSupplier.get(), MetadataStoreConfig.builder().build());
+
+        store.put(key1, "value-1".getBytes(), Optional.of(-1L), EnumSet.of(CreateOption.Ephemeral)).join();
+        store.put(key2, "value-1".getBytes(), Optional.empty(), EnumSet.of(CreateOption.Ephemeral)).join();
+        store.close();
+
+        @Cleanup MetadataStoreExtended store2 = MetadataStoreExtended.create(urlSupplier.get(), MetadataStoreConfig.builder().build());
+        assertFalse(store2.exists(key1).join());
+        assertFalse(store2.exists(key2).join());
+        store2.close();
+    }
+
 }

@@ -330,7 +330,7 @@ public class ZKMetadataStore extends AbstractBatchedMetadataStore
             case PUT: {
                 OpPut p = op.asPut();
                 CreateMode createMode = getCreateMode(p.getOptions());
-                if (p.getOptExpectedVersion().isPresent() && p.getOptExpectedVersion().get() == -1L) {
+                if (p.getOptExpectedVersion().isEmpty() || p.getOptExpectedVersion().get() == -1L) {
                     // We are assuming a create operation
                     return Op.create(p.getPath(), p.getData(), ZooDefs.Ids.OPEN_ACL_UNSAFE, createMode);
                 } else {
